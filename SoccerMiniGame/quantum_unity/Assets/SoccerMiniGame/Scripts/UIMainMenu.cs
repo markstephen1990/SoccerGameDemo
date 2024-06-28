@@ -6,8 +6,6 @@ using Quantum.Demo;
 using Quantum;
 using TMPro;
 using System.Linq;
-using Quantum.SoccerGame.System;
-using ExitGames.Client.Photon.StructWrapping;
 
 public unsafe class UIMainMenu : MonoBehaviour, IConnectionCallbacks, IMatchmakingCallbacks
 {
@@ -54,39 +52,47 @@ public unsafe class UIMainMenu : MonoBehaviour, IConnectionCallbacks, IMatchmaki
 
     private void Update()
     {
-        loadBalancingClient?.Service();
+        loadBalancingClient?.Service(); // Ensure LoadBalancingClient is serviced if it exists
+
+        // Check if client is in a room
         if (loadBalancingClient != null && loadBalancingClient.InRoom)
         {
-
+            // Check if game has started based on custom room properties
             var hasStarted = loadBalancingClient.CurrentRoom.CustomProperties.TryGetValue("START", out var start) && (bool)start;
             var mapGuid = (AssetGuid)(loadBalancingClient.CurrentRoom.CustomProperties.TryGetValue("MAP-GUID", out var guid) ? (long)guid : 0L);
 
+            // Master client logic to set map and start game if necessary
             if (loadBalancingClient.LocalPlayer.IsMasterClient)
             {
                 var ht = new Hashtable();
+
+                // Set map and start properties if not already set
                 if (!mapGuid.IsValid)
                 {
                     if (selectedMapGuid.IsValid)
                     {
                         ht.Add("MAP-GUID", selectedMapGuid.Value);
                         ht.Add("START", true);
-
                     }
                 }
+
+                // Apply changes to room properties if any updates were made
                 if (ht.Count > 0)
                 {
                     loadBalancingClient.CurrentRoom.SetCustomProperties(ht);
                 }
             }
 
-            // Everyone is listening for map and start properties
+            // Start the game if map and start properties are valid and game has not started yet
             if (mapGuid.IsValid && !isGameStarted)
             {
                 Debug.LogFormat("### Starting game using map '{0}'", mapGuid);
 
+                // Create runtime configuration based on selected map
                 var config = RuntimeConfigContainer != null ? RuntimeConfig.FromByteArray(RuntimeConfig.ToByteArray(RuntimeConfigContainer.Config)) : new RuntimeConfig();
                 config.Map.Id = mapGuid;
 
+                // Set parameters for starting the game
                 var param = new QuantumRunner.StartParameters
                 {
                     RuntimeConfig = config,
@@ -96,13 +102,18 @@ public unsafe class UIMainMenu : MonoBehaviour, IConnectionCallbacks, IMatchmaki
                     LocalPlayerCount = 1,
                     NetworkClient = loadBalancingClient
                 };
+
+                // Create client ID and start the game
                 var clientId = ClientIdProvider.CreateClientId(IdProvider, loadBalancingClient);
                 QuantumRunner.StartGame(clientId, param);
+
+                // Update game start status and deactivate main menu UI
                 isGameStarted = true;
                 MainMenu.SetActive(false);
             }
         }
     }
+
 
     private void OnDestroy()
     {
@@ -120,7 +131,6 @@ public unsafe class UIMainMenu : MonoBehaviour, IConnectionCallbacks, IMatchmaki
 
     public void ConnectToServer()
     {
-        Debug.Log("ConnectToServer");
         loadBalancingClient = new LoadBalancingClient();
         loadBalancingClient.ConnectionCallbackTargets.Add(this);
         loadBalancingClient.MatchMakingCallbackTargets.Add(this);
@@ -131,15 +141,12 @@ public unsafe class UIMainMenu : MonoBehaviour, IConnectionCallbacks, IMatchmaki
 
     private void UpdateWins()
     {
-        Debug.Log("Update Player Wins");
         winsText.text = "Wins:" + numberOfWins;
     }
 
     private void OnGameEnd(EventGameplayEnded e)
     {
-        Debug.Log("On Gamplay Ended");
         CheckUpdatePlayerWin();
-        Debug.Log("loadBalancingClient.Disconnect()");
         loadBalancingClient.Disconnect();
     }
 

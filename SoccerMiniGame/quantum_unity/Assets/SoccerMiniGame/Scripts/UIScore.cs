@@ -4,54 +4,60 @@ using UnityEngine.UI;
 
 public unsafe class UIScore : MonoBehaviour
 {
-  public GameObject Panel;
-  public Text Score;
+    public Text Score; // UI text component to display the score
 
-  private void Start()
-  {
-    QuantumEvent.Subscribe<EventOnGoal>(this, OnGoal);
-  }
-
-  private void OnGoal(EventOnGoal e)
-  {
-    Panel.SetActive(true);
-    UpdateScoreText(GetGameScore(QuantumRunner.Default.Game));
-  }
-
-  private int[] GetGameScore(QuantumGame game)
-  {
-    var f = game.Frames.Verified;
-    int[] score = new int[Constants.MAX_PLAYERS];
-
-
-  for (int i = 0; i < Constants.MAX_PLAYERS; i++)
-  {
-    PlayerFields playerFields = f.Global->Players[i];
-
-    if (playerFields.ControlledCharacter != EntityRef.None)
+    // Subscribe to the OnGoal event when the script starts
+    private void Start()
     {
-        score[i] = playerFields.PlayerScore;
+        QuantumEvent.Subscribe<EventOnGoal>(this, OnGoal);
     }
-  }
-    return score;
-  }
 
-  private void UpdateScoreText(int[] score)
-  {
-    Score.text = "";
-    for (int i = 0; i < score.Length; i++)
+    // Event handler for the OnGoal event
+    private void OnGoal(EventOnGoal e)
     {
-      if (i > 0)
-      {
-        Score.text += "\n";
-      }
-      Score.text += "Player " + (i + 1) + " : " + score[i];
+        UpdateScoreText(GetGameScore(QuantumRunner.Default.Game)); // Update the score text with the current game score
     }
-  }
 
-  private void OnDestroy()
-  {
-    QuantumEvent.UnsubscribeListener(this);
-  }
+    // Get the current game score
+    private int[] GetGameScore(QuantumGame game)
+    {
+        var f = game.Frames.Verified; // Get the verified frame
+        int[] score = new int[Constants.MAX_PLAYERS]; // Initialize the score array
 
+        // Iterate through all players to get their scores
+        for (int i = 0; i < Constants.MAX_PLAYERS; i++)
+        {
+            PlayerFields playerFields = f.Global->Players[i];
+
+            // If the player controls a character, get their score
+            if (playerFields.ControlledCharacter != EntityRef.None)
+            {
+                score[i] = playerFields.PlayerScore;
+            }
+        }
+
+        return score; // Return the score array
+    }
+
+    // Update the score text UI
+    private void UpdateScoreText(int[] score)
+    {
+        Score.text = ""; // Clear the score text
+        for (int i = 0; i < score.Length; i++)
+        {
+            // Add a newline character for each player except the first
+            if (i > 0)
+            {
+                Score.text += "\n";
+            }
+            // Append the score for each player
+            Score.text += "Player " + (i + 1) + " : " + score[i];
+        }
+    }
+
+    // Unsubscribe from the OnGoal event when the script is destroyed
+    private void OnDestroy()
+    {
+        QuantumEvent.UnsubscribeListener(this);
+    }
 }
