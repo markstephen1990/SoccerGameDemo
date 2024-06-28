@@ -1,0 +1,3 @@
+component BallFields{
+	Int32 LastTouchedPlayerId;
+}

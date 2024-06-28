@@ -1,0 +1,5 @@
+component PlayerFields{
+	EntityRef ControlledCharacter;
+	Int32 PlayerScore;
+	Boolean HasAlreadyBlocked;
+}

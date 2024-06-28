@@ -1,0 +1,26 @@
+#define MAX_PLAYERS 4
+#define MAX_GOAL 3
+#pragma max_players 4
+
+asset GameSpec;
+
+enum GameState { Block, Goal, Ended}
+
+global{
+	GameState State;
+	Int32 LastGoalPlayer;
+    Int32 PlayerCount;
+	EntityRef Ball;
+	EntityRef BallOwner;
+
+	array<PlayerFields>[MAX_PLAYERS] Players;
+
+}
+
+synced event OnGoal{}
+synced event GameplayEnded{}
+
+signal OnGoal();
+signal OnMatchEnd();
+signal OnSpawnBall();
+signal OnDestroyBall();
